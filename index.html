@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 3 Meal Prep Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        oatmeal: '#F7F4EF',
+                        alabaster: '#EFECE6',
+                        espresso: '#2C2A29',
+                        sage: '#5B6E5B',
+                        terracotta: '#A8634B',
+                        mustard: '#B88B4A',
+                        'sage-dark': '#485848',
+                        'terracotta-dark': '#8c503b'
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F4EF;
+            color: #2C2A29;
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, h4, .font-serif {
+            font-family: 'Georgia', serif;
+        }
+        .checked-item {
+            text-decoration: line-through;
+            opacity: 0.55;
+        }
+        .custom-checkbox {
+            appearance: none;
+            width: 1.15rem;
+            height: 1.15rem;
+            border: 2px solid #A8634B;
+            border-radius: 0.25rem;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s ease-in-out;
+            background-color: #FFFFFF;
+        }
+        .custom-checkbox:checked {
+            background-color: #A8634B;
+            border-color: #A8634B;
+        }
+        .custom-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .pill-fridge { background-color: #E2E8F0; color: #334155; }
+        .pill-freezer { background-color: #DBEAFE; color: #1E40AF; }
+        .pill-pantry { background-color: #FEF3C7; color: #92400E; }
+        .pill-counter { background-color: #ECE9E2; color: #44403C; }
+        .pill-toddler { background-color: #DCFCE7; color: #166534; }
+        .pill-school { background-color: #FCE7F3; color: #9D174D; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #EFECE6;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #B88B4A;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A8634B;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Header & Navigation -->
+    <header class="bg-[#EFECE6] border-b border-[#DCD7CE] sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between py-4 gap-4">
+                <div>
+                    <span class="text-xs font-semibold tracking-widest text-terracotta uppercase">Kitchen Operations</span>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-espresso tracking-tight">Week 3 Meal Prep Master</h1>
+                </div>
+                
+                <!-- Tab Buttons -->
+                <nav class="flex flex-wrap gap-2 text-sm font-medium">
+                    <button onclick="switchTab('tab-shopping')" id="btn-tab-shopping" class="tab-btn px-4 py-2 rounded-md bg-terracotta text-white transition">
+                        Shopping List <span id="count-shopping" class="ml-1 text-xs px-1.5 py-0.5 rounded-full bg-white/20">0/0</span>
+                    </button>
+                    <button onclick="switchTab('tab-workflow')" id="btn-tab-workflow" class="tab-btn px-4 py-2 rounded-md bg-white text-espresso hover:bg-alabaster border border-[#DCD7CE] transition">
+                        Batch Workflow <span id="count-workflow" class="ml-1 text-xs px-1.5 py-0.5 rounded-full bg-espresso/10">0/0</span>
+                    </button>
+                    <button onclick="switchTab('tab-inventory')" id="btn-tab-inventory" class="tab-btn px-4 py-2 rounded-md bg-white text-espresso hover:bg-alabaster border border-[#DCD7CE] transition">
+                        Master Inventory <span id="count-inventory" class="ml-1 text-xs px-1.5 py-0.5 rounded-full bg-espresso/10">0/0</span>
+                    </button>
+                    <button onclick="switchTab('tab-daily')" id="btn-tab-daily" class="tab-btn px-4 py-2 rounded-md bg-white text-espresso hover:bg-alabaster border border-[#DCD7CE] transition">
+                        Daily Guide
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+
+        <!-- GLOBAL CONTROL BAR -->
+        <div class="flex justify-between items-center mb-6 bg-white p-3 sm:p-4 rounded-lg border border-[#DCD7CE] shadow-sm">
+            <div id="progress-container" class="flex-1 mr-4">
+                <div class="flex justify-between text-xs font-semibold text-espresso mb-1">
+                    <span id="active-tab-title">Shopping Completion</span>
+                    <span id="completion-percentage">0%</span>
+                </div>
+                <div class="w-full bg-alabaster rounded-full h-2.5 overflow-hidden">
+                    <div id="progress-bar" class="bg-sage h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+            <button onclick="resetCurrentTab()" class="text-xs text-terracotta font-medium hover:underline whitespace-nowrap border border-terracotta/30 px-3 py-1.5 rounded hover:bg-terracotta/5">
+                Reset Current Tab
+            </button>
+        </div>
+
+        <!-- ================= TAB 1: SHOPPING LIST ================= -->
+        <section id="tab-shopping" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- PRODUCE -->
+                <div class="bg-white rounded-lg p-5 border border-[#DCD7CE] shadow-sm">
+                    <h2 class="text-xl font-bold text-sage mb-4 pb-2 border-b border-alabaster">Produce</h2>
+                    <ul class="space-y-3" id="list-produce">
+                        <!-- JS populated -->
+                    </ul>
+                </div>
+
+                <!-- MEAT & SEAFOOD -->
+                <div class="bg-white rounded-lg p-5 border border-[#DCD7CE] shadow-sm">
+                    <h2 class="text-xl font-bold text-terracotta mb-4 pb-2 border-b border-alabaster">Meat & Seafood</h2>
+                    <ul class="space-y-3" id="list-meat">
+                        <!-- JS populated -->
+                    </ul>
+                    
+                    <h2 class="text-xl font-bold text-mustard mt-8 mb-4 pb-2 border-b border-alabaster">Chilled & Frozen</h2>
+                    <ul class="space-y-3" id="list-chilled">
+                        <!-- JS populated -->
+                    </ul>
+                </div>
+
+                <!-- PANTRY & STAPLES -->
+                <div class="bg-white rounded-lg p-5 border border-[#DCD7CE] shadow-sm md:col-span-2">
+                    <h2 class="text-xl font-bold text-espresso mb-4 pb-2 border-b border-alabaster">Pantry & Staples</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3" id="list-pantry">
+                        <!-- JS populated -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: BATCH WORKFLOW ================= -->
+        <section id="tab-workflow" class="tab-content hidden">
+            <div class="space-y-8">
+
+                <!-- Stage A -->
+                <div class="bg-white rounded-lg p-6 border border-[#DCD7CE] shadow-sm">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-alabaster">
+                        <div>
+                            <span class="text-xs uppercase font-bold text-mustard tracking-wider">Phase 1</span>
+                            <h2 class="text-2xl font-bold text-espresso">Stage A: Long-Simmer Liquids, Grains & Pots</h2>
+                        </div>
+                    </div>
+                    <ul class="space-y-4" id="workflow-stage-a"></ul>
+                </div>
+
+                <!-- Stage B -->
+                <div class="bg-white rounded-lg p-6 border border-[#DCD7CE] shadow-sm">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-alabaster">
+                        <div>
+                            <span class="text-xs uppercase font-bold text-sage tracking-wider">Phase 2</span>
+                            <h2 class="text-2xl font-bold text-espresso">Stage B: Blender, Sauces & Dips</h2>
+                        </div>
+                    </div>
+                    <ul class="space-y-4" id="workflow-stage-b"></ul>
+                </div>
+
+                <!-- Stage C -->
+                <div class="bg-white rounded-lg p-6 border border-[#DCD7CE] shadow-sm">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-alabaster">
+                        <div>
+                            <span class="text-xs uppercase font-bold text-terracotta tracking-wider">Phase 3</span>
+                            <h2 class="text-2xl font-bold text-espresso">Stage C: Board Prep, Veg, Pickles & Baking Batters</h2>
+                        </div>
+                    </div>
+                    <ul class="space-y-4" id="workflow-stage-c"></ul>
+                </div>
+
+                <!-- Stage D -->
+                <div class="bg-white rounded-lg p-6 border border-[#DCD7CE] shadow-sm">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-alabaster">
+                        <div>
+                            <span class="text-xs uppercase font-bold text-terracotta tracking-wider">Phase 4 (Isolated Board)</span>
+                            <h2 class="text-2xl font-bold text-espresso">Stage D: Raw Meat Prep & Coating</h2>
+                        </div>
+                    </div>
+                    <ul class="space-y-4" id="workflow-stage-d"></ul>
+                </div>
+
+                <!-- Stage E -->
+                <div class="bg-white rounded-lg p-6 border border-[#DCD7CE] shadow-sm">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-alabaster">
+                        <div>
+                            <span class="text-xs uppercase font-bold text-sage tracking-wider">Phase 5</span>
+                            <h2 class="text-2xl font-bold text-espresso">Stage E: Sequential Oven Queue, Cooling & Pack-Down</h2>
+                        </div>
+                    </div>
+                    <ul class="space-y-4" id="workflow-stage-e"></ul>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: MASTER INVENTORY ================= -->
+        <section id="tab-inventory" class="tab-content hidden">
+            <div class="space-y-8">
+
+                <!-- Core Meal Components -->
+                <div class="bg-white rounded-lg p-6 border border-[#DCD7CE] shadow-sm">
+                    <h2 class="text-2xl font-bold text-espresso mb-4 pb-2 border-b border-alabaster">Core Meal Components</h2>
+                    <div class="space-y-3" id="inventory-core"></div>
+                </div>
+
+                <!-- Snacks & Baked Goods -->
+                <div class="bg-white rounded-lg p-6 border border-[#DCD7CE] shadow-sm">
+                    <h2 class="text-2xl font-bold text-espresso mb-4 pb-2 border-b border-alabaster">Snacks & Baked Goods</h2>
+                    <div class="space-y-3" id="inventory-snacks"></div>
+                </div>
+
+                <!-- Scratch Drinks & Beverages -->
+                <div class="bg-white rounded-lg p-6 border border-[#DCD7CE] shadow-sm">
+                    <h2 class="text-2xl font-bold text-espresso mb-4 pb-2 border-b border-alabaster">Scratch Drinks & Beverages</h2>
+                    <div class="space-y-3" id="inventory-drinks"></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: DAILY GUIDE ================= -->
+        <section id="tab-daily" class="tab-content hidden">
+            
+            <!-- Day Selector Accordion/Tabs -->
+            <div class="flex overflow-x-auto gap-2 mb-6 pb-2 border-b border-[#DCD7CE]">
+                <button onclick="switchDay('sun')" id="day-btn-sun" class="day-btn px-5 py-2.5 rounded-lg bg-terracotta text-white font-medium whitespace-nowrap transition">Sunday</button>
+                <button onclick="switchDay('mon')" id="day-btn-mon" class="day-btn px-5 py-2.5 rounded-lg bg-white text-espresso border border-[#DCD7CE] font-medium whitespace-nowrap transition">Monday</button>
+                <button onclick="switchDay('tue')" id="day-btn-tue" class="day-btn px-5 py-2.5 rounded-lg bg-white text-espresso border border-[#DCD7CE] font-medium whitespace-nowrap transition">Tuesday</button>
+                <button onclick="switchDay('wed')" id="day-btn-wed" class="day-btn px-5 py-2.5 rounded-lg bg-white text-espresso border border-[#DCD7CE] font-medium whitespace-nowrap transition">Wednesday</button>
+                <button onclick="switchDay('thu')" id="day-btn-thu" class="day-btn px-5 py-2.5 rounded-lg bg-white text-espresso border border-[#DCD7CE] font-medium whitespace-nowrap transition">Thursday</button>
+                <button onclick="switchDay('fri')" id="day-btn-fri" class="day-btn px-5 py-2.5 rounded-lg bg-white text-espresso border border-[#DCD7CE] font-medium whitespace-nowrap transition">Friday</button>
+                <button onclick="switchDay('sat')" id="day-btn-sat" class="day-btn px-5 py-2.5 rounded-lg bg-white text-espresso border border-[#DCD7CE] font-medium whitespace-nowrap transition">Saturday</button>
+            </div>
+
+            <!-- Day Panels -->
+            <div id="day-panels">
+
+                <!-- SUNDAY -->
+                <div id="day-panel-sun" class="day-panel space-y-6">
+                    <div class="bg-white p-6 rounded-lg border border-[#DCD7CE] shadow-sm">
+                        <span class="text-xs uppercase tracking-wider text-terracotta font-bold">Sunday Evening</span>
+                        <h2 class="text-2xl font-bold text-espresso mb-3">Dinner: Miso-Maple Chicken, Smashed Potatoes & Greens</h2>
+                        <div class="prose max-w-none text-espresso/90 text-sm leading-relaxed space-y-2">
+                            <p><strong>Assembly:</strong> Roast chicken #1 skin-up at 200°C for 45-50 min. Smash 1kg baby potatoes with oil and salt, roast below chicken 35 min until crisp. Reheat 650g greens last 8 min. Rest, carve, serve with salsa verde and pea dip.</p>
+                            <p class="text-xs bg-alabaster p-3 rounded border-l-4 border-mustard">
+                                <strong>Dairy-Free Swap:</strong> Tahini sauce.<br>
+                                <strong>Optional Dairy Finisher:</strong> Shaved parmesan on potatoes.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-sage mb-2">Next-Day Lunch Rescue</h3>
+                            <p class="text-sm">Chicken wraps in flatbreads with pea dip and cos + 2 egg muffins.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-terracotta mb-2">Toddler Snack Moment</h3>
+                            <p class="text-sm">Quartered unsalted egg muffins, halved sweet potato wedges.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MONDAY -->
+                <div id="day-panel-mon" class="day-panel hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg border border-[#DCD7CE] shadow-sm">
+                        <span class="text-xs uppercase tracking-wider text-terracotta font-bold">Monday Evening</span>
+                        <h2 class="text-2xl font-bold text-espresso mb-3">Dinner: Ginger-Garlic Tamari Steak Bowls</h2>
+                        <div class="prose max-w-none text-espresso/90 text-sm leading-relaxed space-y-2">
+                            <p><strong>Assembly:</strong> Sear marinated steak 2.5 min/side in a ripping hot skillet, rest 8 min, slice thin against the grain. Serve over reheated coconut jasmine rice with pickles, greens, sesame-nori sprinkle, miso glaze drizzle, and sweet potato wedges.</p>
+                            <p class="text-xs bg-alabaster p-3 rounded border-l-4 border-mustard">
+                                <strong>Dairy-Free Swap:</strong> Salsa verde.<br>
+                                <strong>Optional Dairy Finisher:</strong> Butter knob on steak.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-sage mb-2">Next-Day Lunch Rescue</h3>
+                            <p class="text-sm">Cold steak bowl with rice, pickles, 2 jammy eggs.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-terracotta mb-2">After-School Hunger Hour</h3>
+                            <p class="text-sm">2 egg muffins, 1 oat bar, shrub fizz.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TUESDAY -->
+                <div id="day-panel-tue" class="day-panel hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg border border-[#DCD7CE] shadow-sm">
+                        <span class="text-xs uppercase tracking-wider text-terracotta font-bold">Tuesday Evening</span>
+                        <h2 class="text-2xl font-bold text-espresso mb-3">Dinner: Basil-Zucchini Meatball Rice Bowls</h2>
+                        <div class="prose max-w-none text-espresso/90 text-sm leading-relaxed space-y-2">
+                            <p><strong>Assembly:</strong> Simmer 28 pre-baked meatballs in 900ml tomato sauce for 12 min. Serve over thawed coconut rice with cucumber-cos salad and sesame-nori sprinkle.</p>
+                            <p class="text-xs bg-alabaster p-3 rounded border-l-4 border-mustard">
+                                <strong>Dairy-Free Swap:</strong> Fresh basil + salsa verde drizzle.<br>
+                                <strong>Optional Dairy Finisher:</strong> Melted mozzarella.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-sage mb-2">Next-Day Lunch Rescue</h3>
+                            <p class="text-sm">Meatball wraps in 3 flatbreads with pea dip and cos.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-terracotta mb-2">After-School Hunger Hour</h3>
+                            <p class="text-sm">3 scrolls, fresh strawberries.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WEDNESDAY -->
+                <div id="day-panel-wed" class="day-panel hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg border border-[#DCD7CE] shadow-sm">
+                        <span class="text-xs uppercase tracking-wider text-terracotta font-bold">Wednesday Evening</span>
+                        <h2 class="text-2xl font-bold text-espresso mb-3">Dinner: Kangaroo-Chicken Sliders</h2>
+                        <div class="prose max-w-none text-espresso/90 text-sm leading-relaxed space-y-2">
+                            <p><strong>Assembly:</strong> Reheat 18 slider patties (190°C 10 min), warm 5 flatbreads. Build sliders with tahini sauce, pickles, tomato confit, and cos. Serve with remaining 900g smashed potatoes.</p>
+                            <p class="text-xs bg-alabaster p-3 rounded border-l-4 border-mustard">
+                                <strong>Midweek Refresh Note:</strong> Top up fruit boxes, blanch 1 bunch broccolini.<br>
+                                <strong>Dairy-Free Swap:</strong> Tahini sauce & pepita crunch.<br>
+                                <strong>Optional Dairy Finisher:</strong> Crumbled feta.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-sage mb-2">Next-Day Lunch Rescue</h3>
+                            <p class="text-sm">Slider wraps (6 patties in 3 flatbreads with tahini & pickles).</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-terracotta mb-2">After-School Hunger Hour</h3>
+                            <p class="text-sm">3 energy balls, seed crunch, rockmelon cooler.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- THURSDAY -->
+                <div id="day-panel-thu" class="day-panel hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg border border-[#DCD7CE] shadow-sm">
+                        <span class="text-xs uppercase tracking-wider text-terracotta font-bold">Thursday Evening</span>
+                        <h2 class="text-2xl font-bold text-espresso mb-3">Dinner: Crisp Panko Katsu Curry</h2>
+                        <div class="prose max-w-none text-espresso/90 text-sm leading-relaxed space-y-2">
+                            <p><strong>Assembly:</strong> Bake 10 katsu cutlets from frozen (200°C 20-22 min until crisp). Reheat 600ml katsu-curry sauce, serve over thawed jasmine rice with pickles and sesame-nori sprinkle.</p>
+                            <p class="text-xs bg-alabaster p-3 rounded border-l-4 border-mustard">
+                                <strong>Dairy-Free Swap:</strong> Naturally DF.<br>
+                                <strong>Optional Dairy Finisher:</strong> None needed.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-sage mb-2">Next-Day Lunch Rescue</h3>
+                            <p class="text-sm">Katsu wraps with curry sauce, cos, cucumber.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-terracotta mb-2">After-School Hunger Hour</h3>
+                            <p class="text-sm">2 cookies, banana, shrub fizz.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FRIDAY -->
+                <div id="day-panel-fri" class="day-panel hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg border border-[#DCD7CE] shadow-sm">
+                        <span class="text-xs uppercase tracking-wider text-terracotta font-bold">Friday Evening</span>
+                        <h2 class="text-2xl font-bold text-espresso mb-3">Dinner: Sticky Thigh Fried Rice</h2>
+                        <div class="prose max-w-none text-espresso/90 text-sm leading-relaxed space-y-2">
+                            <p><strong>Assembly:</strong> Cook frozen veg base in a hot wok 3 min. Add 1.05kg thawed thigh bites, 800g thawed rice. Scramble 6 eggs with 4 tbsp miso glaze into the wok. Finish with spring onion & sesame-nori.</p>
+                            <p class="text-xs bg-alabaster p-3 rounded border-l-4 border-mustard">
+                                <strong>Note:</strong> Pull Saturday chicken/meatballs from freezer to thaw.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-sage mb-2">Next-Day Lunch Rescue</h3>
+                            <p class="text-sm">Egg muffins, leftover fried rice, fruit box.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-terracotta mb-2">After-School Hunger Hour</h3>
+                            <p class="text-sm">2 jammy eggs, flatbread w/ pea dip, 1 oat bar.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SATURDAY -->
+                <div id="day-panel-sat" class="day-panel hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg border border-[#DCD7CE] shadow-sm">
+                        <span class="text-xs uppercase tracking-wider text-terracotta font-bold">Saturday Evening</span>
+                        <h2 class="text-2xl font-bold text-espresso mb-3">Dinner: Freezer-Raid Flatbread Pizza</h2>
+                        <div class="prose max-w-none text-espresso/90 text-sm leading-relaxed space-y-2">
+                            <p><strong>Assembly:</strong> Crisp 5 flatbreads in dry pan. Top with 300ml tomato sauce, 600g shredded chicken, 16 sliced meatballs, spinach, and tomato confit. Bake 220°C 6 min, top with pea dip dollop.</p>
+                            <p class="text-xs bg-alabaster p-3 rounded border-l-4 border-mustard">
+                                <strong>Dairy-Free Swap:</strong> Pea dip dollop.<br>
+                                <strong>Optional Dairy Finisher:</strong> Mozzarella cheese.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-sage mb-2">Weekend Snack Deployment</h3>
+                            <p class="text-sm">Strawberry-banana coconut-yoghurt bark straight from the freezer.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-[#DCD7CE]">
+                            <h3 class="font-bold text-terracotta mb-2">Toddler Moments</h3>
+                            <p class="text-sm">Pea-avocado mash on flatbread fingers, soft meatball halves.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Deployment Summary Box -->
+            <div class="mt-8 bg-[#EFECE6] p-6 rounded-lg border border-[#DCD7CE]">
+                <h3 class="text-lg font-bold text-espresso mb-3">School & Snack Deployment Rules</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
+                    <div>
+                        <strong>Standard School Lunch Formula:</strong><br>
+                        1 Savory (2 egg muffins / 2 scrolls / slider wrap) + 1 Sweet (1 oat bar / 2 energy balls) + 150g fruit box + cucumber sticks + frozen rooibos-mango iced tea bottle.
+                    </div>
+                    <div>
+                        <strong>Toddler Safe Modifications:</strong><br>
+                        Quartered unsalted egg muffins, warmed oat bar strips, halved sweet potato wedges, soft meatball halves, pea-avocado mash on flatbread fingers, quartered berries, jammy egg quarters.
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- JS Logic -->
+    <script>
+        // DATA STRUCTURES
+        const shoppingData = {
+            produce: [
+                { id: 's1', text: 'Baby potatoes (chats)', qty: '2kg', tag: 'smashed potatoes' },
+                { id: 's2', text: 'Sweet potato', qty: '2.5kg', tag: 'wedges' },
+                { id: 's3', text: 'Brown onions', qty: '1kg', tag: 'curry sauce, meatballs, slider patties' },
+                { id: 's4', text: 'Garlic', qty: '6 heads', tag: 'marinades, sauces, confit, meatballs, patties' },
+                { id: 's5', text: 'Ginger', qty: '300g', tag: 'rice, steak, glaze, curry, shrub, jammy eggs' },
+                { id: 's6', text: 'Carrots', qty: '1kg', tag: 'curry sauce, fried-rice veg base' },
+                { id: 's7', text: 'Zucchini', qty: '1kg', tag: 'meatballs, patties, egg muffins' },
+                { id: 's8', text: 'Spring onions', qty: '4 bunches', tag: 'muffins, pickles, fried-rice base' },
+                { id: 's9', text: 'Corn cobs', qty: '6', tag: 'egg muffins, fried-rice base' },
+                { id: 's10', text: 'Asparagus', qty: '3 bunches', tag: 'green tray' },
+                { id: 's11', text: 'Broccolini', qty: '4 bunches', tag: 'green tray' },
+                { id: 's12', text: 'Green beans', qty: '400g', tag: 'green tray' },
+                { id: 's13', text: 'Lebanese cucumbers', qty: '10', tag: 'pickles, lunchbox sticks' },
+                { id: 's14', text: 'Radishes', qty: '2 bunches', tag: 'pickles' },
+                { id: 's15', text: 'Cherry tomatoes', qty: '1kg', tag: 'confit' },
+                { id: 's16', text: 'Baby spinach', qty: '280g', tag: 'scrolls, Saturday pizza' },
+                { id: 's17', text: 'Baby cos lettuce', qty: '3', tag: 'wraps, side salads' },
+                { id: 's18', text: 'Avocados', qty: '5', tag: 'pea dip, toddler mash' },
+                { id: 's19', text: 'Pink Lady apples', qty: '2', tag: 'curry sauce' },
+                { id: 's20', text: 'Bananas', qty: '10', tag: 'oat bars, bark' },
+                { id: 's21', text: 'Strawberries', qty: '2kg', tag: 'shrub, jam, bark, fruit boxes' },
+                { id: 's22', text: 'Blueberries', qty: '600g', tag: 'oat bars, fruit boxes' },
+                { id: 's23', text: 'Rockmelons', qty: '2', tag: 'cooler, fruit boxes' },
+                { id: 's24', text: 'Mangoes', qty: '2 (or 500g frozen)', tag: 'iced tea' },
+                { id: 's25', text: 'Flat-leaf parsley', qty: '5 bunches', tag: 'salsa verde, patties, muffins, dip, tahini sauce' },
+                { id: 's26', text: 'Basil', qty: '4 bunches', tag: 'meatballs, tomato sauce, pea dip, salsa verde' },
+                { id: 's27', text: 'Chives', qty: '3 bunches', tag: 'salsa verde, patties, garnish' },
+                { id: 's28', text: 'Mint', qty: '1 bunch', tag: 'rockmelon cooler only' },
+                { id: 's29', text: 'Thyme', qty: '1 pack', tag: 'chicken marinade, confit' },
+                { id: 's30', text: 'Rosemary', qty: '1 pack', tag: 'seed crunch' }
+            ],
+            meat: [
+                { id: 's31', text: 'Whole chickens', qty: '2 × 1.9kg', tag: 'spatchcock #1 (Sunday), #2 (shredded)' },
+                { id: 's32', text: 'Chicken breast fillets', qty: '1.6kg', tag: 'katsu' },
+                { id: 's33', text: 'Boneless skinless chicken thighs', qty: '1.5kg', tag: 'thigh bites, Friday fried rice' },
+                { id: 's34', text: 'Rump or flank steak', qty: '1.4kg', tag: 'ginger-garlic tamari steak' },
+                { id: 's35', text: 'Turkey mince', qty: '600g', tag: 'meatballs' },
+                { id: 's36', text: 'Pork mince', qty: '600g', tag: 'meatballs' },
+                { id: 's37', text: 'Kangaroo mince', qty: '800g', tag: 'slider patties' },
+                { id: 's38', text: 'Chicken mince', qty: '400g', tag: 'slider patties' }
+            ],
+            pantry: [
+                { id: 's39', text: 'Jasmine rice', qty: '1.5kg', tag: 'rice' },
+                { id: 's40', text: 'Rolled oats', qty: '1.5kg', tag: 'meatballs, patties, muffins, bars, cookies, balls' },
+                { id: 's41', text: 'Plain flour', qty: '2kg', tag: 'flatbreads, scrolls, katsu' },
+                { id: 's42', text: 'Panko', qty: '400g', tag: 'katsu' },
+                { id: 's43', text: 'Almond meal', qty: '200g', tag: 'cookies' },
+                { id: 's44', text: 'Desiccated coconut', qty: '200g', tag: 'balls' },
+                { id: 's45', text: 'Chia seeds', qty: '50g', tag: 'jam' },
+                { id: 's46', text: 'Pepitas & sunflower seeds', qty: '300g / 200g', tag: 'crunch' },
+                { id: 's47', text: 'Medjool dates', qty: '400g', tag: 'balls' },
+                { id: 's48', text: 'Tahini', qty: '400g', tag: 'tahini sauce, dip, balls' },
+                { id: 's49', text: 'Coconut oil', qty: '300g', tag: 'bars, cookies' },
+                { id: 's50', text: 'EVOO + Olive oil spray', qty: '1L', tag: 'everything' },
+                { id: 's51', text: 'Sesame oil', qty: '100ml', tag: 'steak, glaze' },
+                { id: 's52', text: 'Toasted sesame seeds & nori', qty: '100g / 1 pack', tag: 'sprinkle' },
+                { id: 's53', text: 'Tamari', qty: '600ml', tag: 'glaze, steak, eggs, curry, fried rice' },
+                { id: 's54', text: 'White miso', qty: '200g', tag: 'chicken, glaze' },
+                { id: 's55', text: 'Mirin', qty: '200ml', tag: 'glaze, jammy eggs' },
+                { id: 's56', text: 'Pure maple syrup', qty: '600ml', tag: 'chicken, steak, glaze, bars, cookies, jam, drinks' },
+                { id: 's57', text: 'Raw sugar', qty: '350g', tag: 'shrub, pickles, steak' },
+                { id: 's58', text: 'Apple cider vinegar', qty: '1L', tag: 'acid needs, steak, curry' },
+                { id: 's59', text: 'Passata', qty: '3 × 680g', tag: 'tomato sauce' },
+                { id: 's60', text: 'Coconut milk', qty: '2 × 400ml', tag: 'rice, curry' },
+                { id: 's61', text: 'Salt-reduced chicken stock', qty: '1L', tag: 'curry' },
+                { id: 's62', text: 'Baking powder & Vanilla', qty: '1 tub / 1 bottle', tag: 'baking' },
+                { id: 's63', text: 'Spices & Seasoning', qty: 'Assorted', tag: 'cumin, turmeric, cinnamon, etc.' },
+                { id: 's64', text: 'Rooibos teabags', qty: '20', tag: 'iced tea' },
+                { id: 's65', text: 'Soda water', qty: '6 × 1.25L', tag: 'shrub fizz' }
+            ],
+            chilled: [
+                { id: 's66', text: 'Eggs', qty: '48 (4 dozen)', tag: 'muffins, eggs, binders, katsu, bars, fried rice' },
+                { id: 's67', text: 'Unsweetened coconut yoghurt', qty: '4 × 500g', tag: 'flatbreads, scrolls, tahini sauce, bark' },
+                { id: 's68', text: 'Frozen peas', qty: '1kg', tag: 'pea dip, fried-rice base' },
+                { id: 's69', text: 'OPTIONAL dairy garnish', qty: 'Mozzarella, Greek yoghurt, feta', tag: 'finishing' }
+            ]
+        };
+
+        const workflowData = {
+            stageA: [
+                { id: 'w1', text: 'Preheat oven to 150°C fan. Halve 1kg cherry tomatoes, toss with 1 head garlic, 120ml olive oil, thyme, salt. Slow-roast 60–70 min (confit).' },
+                { id: 'w2', text: 'Cook Rice: In 2 pots, use 600g rinsed jasmine, 200ml coconut milk, 1L water, sliced ginger, 1 tsp salt each. Cook covered 15 min, rest 10 min.' },
+                { id: 'w3', text: 'Katsu-curry sauce: Sweat 3 onions, 3 carrots, 2 apples, 40g ginger, 6 garlic in oil 10 min. Add spices (1 tbsp turmeric, 2 tsp cumin, 1 tsp cinnamon, 1 tsp pepper) & 40g flour. Add 700ml stock, 400ml coconut milk, 1 tbsp ACV, 3 tbsp tamari, 2 tbsp maple. Simmer 35–40 min.' },
+                { id: 'w4', text: 'Tomato-basil sauce: Gently fry 6 garlic cloves in 60ml oil. Add 3 bottles passata, 1 tsp oregano, 1 tbsp maple, salt. Simmer 45 min.' },
+                { id: 'w5', text: 'Potatoes: Boil 2kg baby potatoes in salted water 15–18 min. Drain, steam-dry 10 min, spread on tray.' },
+                { id: 'w6', text: 'Shrub: Simmer 600g strawberries, 100g ginger, 250g sugar, 200ml ACV, 200ml water for 20 min.' },
+                { id: 'w7', text: 'Jam: Simmer 300g strawberries, 1 tbsp maple, 2 tbsp chia for 10 min, mashing. Cool.' },
+                { id: 'w8', text: 'Tea: Steep 12 rooibos bags in 2L hot water 10 min. Remove bags.' },
+                { id: 'w9', text: 'Jammy eggs: Boil 12 eggs for 6.5 min, ice-bath, peel. Submerge in 100ml tamari, 100ml mirin, 300ml water, 20g ginger.' }
+            ],
+            stageB: [
+                { id: 'w10', text: 'Blend curry sauce smooth, spread in shallow tray to cool.' },
+                { id: 'w11', text: 'Crush/strain shrub into 1L bottle. Stir 1 bunch basil into tomato sauce & blitz half smooth for kids.' },
+                { id: 'w12', text: 'Pea-basil-avocado dip: Blend 500g peas, 3 avocados, 1 bunch basil, ½ bunch parsley, 1 garlic, 40g tahini, 60ml oil, 2 tbsp ACV, salt. Press cling film onto surface.' },
+                { id: 'w13', text: 'Tahini sauce: Whisk 400g coconut yoghurt, 100g tahini, 2 garlic cloves, ½ bunch parsley, 1 tbsp ACV, 60ml water.' },
+                { id: 'w14', text: 'Salsa verde: Pulse 2 bunches parsley, 1 bunch chives, 1 bunch basil, 2 garlic, 60ml ACV, 200ml oil, salt.' },
+                { id: 'w15', text: 'Glaze: Whisk 200ml tamari, 100ml maple, 60ml mirin, 40g miso, 6 garlic cloves, 50g ginger, 2 tbsp sesame oil, 100ml water.' },
+                { id: 'w16', text: 'Sprinkle: Toast 100g sesame seeds, crumble 4 nori sheets, add flaky salt.' },
+                { id: 'w17', text: 'Cooler: Blend 1 rockmelon flesh, 1 bunch mint, 1.2L water, 1 tbsp maple.' },
+                { id: 'w18', text: 'Iced tea: Blend 2 mangoes + 100ml maple, combine with cooled rooibos, top to 3L. Chill.' }
+            ],
+            stageC: [
+                { id: 'w19', text: 'Pickles: Slice 6 cucumbers, 2 bunches radishes, 1 bunch spring onions. Pour hot brine (300ml ACV, 300ml water, 3 tbsp sugar, 1.5 tbsp salt, 1 tsp mustard seeds).' },
+                { id: 'w20', text: 'Cut 540g asparagus, 720g broccolini, 400g green beans. Toss with oil and salt on 2 trays.' },
+                { id: 'w21', text: 'Cut 2.5kg sweet potato into wedges. Toss with oil, salt, 1 tsp cumin on 2 trays.' },
+                { id: 'w22', text: 'Fried-rice base: Dice 400g carrot, slice 2 bunches spring onions, cut 3 cobs corn, add 300g frozen peas. Bag flat & freeze.' },
+                { id: 'w23', text: 'Grate 900g zucchini & squeeze dry. Split into 400g (muffins), 300g (meatballs), 200g (patties). Cut kernels from 3 cobs (muffins).' },
+                { id: 'w24', text: 'Egg muffin batter: Whisk 14 eggs, 60ml oil, 150g oat flour, 1 tsp baking powder, 400g zucchini, 300g corn, 3 spring onions, 1 bunch parsley, pinch salt. Fill 36 cups.' },
+                { id: 'w25', text: 'Oat bar batter: Mash 6 bananas, mix with 4 eggs, 100g coconut oil, 80ml maple, 1 tsp vanilla, 2 tsp baking powder, 1 tsp cinnamon, 600g oats, 300g blueberries. Press into lined tray.' },
+                { id: 'w26', text: 'Cookie dough: Mix 300g oat flour, 150g almond meal, 1 tsp baking powder, 100g coconut oil, 90ml maple, 1 egg, 1 tsp vanilla, pinch salt. Roll 30 balls, thumbprint & fill with jam. Chill.' },
+                { id: 'w27', text: 'Flatbread dough: Mix 1.2kg flour, 4 tsp baking powder, 2.5 tsp salt, 650g coconut yoghurt, 120ml oil, ~200ml water. Rest 30 min. Roll 22 rounds, cook dry in hot pan 90s/side.' },
+                { id: 'w28', text: 'Scroll dough: Mix 600g flour, 2.5 tsp baking powder, 300g coconut yoghurt, 60ml oil, ~100ml water. Rest covered.' },
+                { id: 'w29', text: 'Energy balls: Pulse 400g dates, 200g oats, 120g tahini, 150g coconut, 1 tsp cinnamon, salt, 2 tbsp water. Roll 36 & chill.' },
+                { id: 'w30', text: 'Seed crunch: Toss 300g pepitas, 200g sunflower seeds, 1 tbsp tamari, 1 tbsp oil, 1 tbsp maple, 1 tbsp rosemary on tray.' },
+                { id: 'w31', text: 'Bark: Blend 4 bananas + 500g coconut yoghurt. Spread on lined tray, top with 250g sliced strawberries & freeze.' },
+                { id: 'w32', text: 'Start non-meat oven runs (1-5 in Stage E) as trays are ready.' }
+            ],
+            stageD: [
+                { id: 'w33', text: 'Wipe down benches. Set up raw board, glass containers, fresh towels.' },
+                { id: 'w34', text: 'Chickens: Spatchcock both. Rub paste (80g miso, 80ml maple, 8 garlic, 10 thyme, 60ml ACV, 80ml oil, pepper). Chicken #1 to lidded dish in fridge. Chicken #2 stays on tray for oven.' },
+                { id: 'w35', text: 'Steak: Trim 1.4kg, marinate with 80ml tamari, 2 tbsp ACV, 2 tbsp maple, 4 garlic, 30g ginger, 2 tbsp sesame oil, 2 tbsp olive oil. Seal in fridge.' },
+                { id: 'w36', text: 'Katsu: Slice 1.6kg breast into 10 cutlets, season with salt/garlic powder. Dredge: 100g flour -> 4 eggs -> 400g panko. Place on racks, spray oil, chill.' },
+                { id: 'w37', text: 'Thighs: Toss 1.5kg thighs in 250ml glaze. Spread on 2 lined trays.' },
+                { id: 'w38', text: 'Meatballs: Mix 600g turkey, 600g pork, 300g zucchini, 1 onion, 4 garlic, 100g oats, 2 eggs, 1 bunch basil, 1 tsp oregano, 1.5 tsp salt. Scoop 54.' },
+                { id: 'w39', text: 'Slider patties: Mix 800g kangaroo, 400g chicken mince, 200g zucchini, 1 onion, 4 garlic, 80g oats, 2 eggs, 1 bunch chives, 1 bunch parsley, 2 tsp cumin, 1.5 tsp salt. Shape 30 flat patties (~50g).' },
+                { id: 'w40', text: 'Wash and sanitise all raw tools, boards and benches.' }
+            ],
+            stageE: [
+                { id: 'w41', text: 'Oven Queue:\n• Run 1 (200°C, 30m): Sweet potato ×2 trays\n• Run 2 (200°C, 14m): Green trays ×2\n• Run 3 (180°C, 20m): Muffins (2 tins)\n• Run 4 (180°C, 25m): Muffin tin 3 + Oat bars\n• Run 5 (170°C, 14m): Cookies ×2 trays (Seeds spare shelf 12m)\n• Run 6 (190°C, 50m): Chicken #2 (Rest 15m, shred, save 400g for scrolls)\n• Run 7 (190°C, 18m): Meatballs ×2 trays\n• Run 8 (190°C, 16m): Slider patties ×2 trays (Flip 8m)\n• Run 9 (200°C, 22m): Katsu ×2 trays (Flip 11m)\n• Run 10 (200°C, 25m): Thighs ×2 trays\n• Run 11 (190°C, 22m): Scrolls (Roll dough w/ 250ml tomato sauce, 400g chicken, 120g spinach; slice 24)' },
+                { id: 'w42', text: 'Cool everything on racks (max 1 hour room temp).' },
+                { id: 'w43', text: 'Pack-Down Allocation:\nFREEZER: Rice (4x600g), Katsu, Thigh bites, 600g Chicken, 16 Meatballs, 12 Patties, 1.2L Curry sauce, 900ml Tomato sauce, 400g Pea dip, 18 Muffins, 16 Scrolls, 14 Bars, 18 Cookies, 800g Sweet potato, 14 Flatbreads, Veg base, Bark.\nFRIDGE: Raw glass bottom shelf. Cooked items above.\nCOUNTER: 12 cookies, Seed crunch, Sprinkle.\nPack Sunday night thaw basket!' }
+            ]
+        };
+
+        const inventoryData = {
+            core: [
+                { id: 'i1', text: 'Miso-maple spatchcock chicken #1 (raw, marinated)', qty: '1.9kg', storage: 'FRIDGE', expiry: '3 days max (cook Sunday)' },
+                { id: 'i2', text: 'Ginger-garlic tamari rump steak (raw, marinated)', qty: '1.4kg', storage: 'FRIDGE', expiry: '3 days max (cook Monday)' },
+                { id: 'i3', text: 'Roasted miso-maple chicken #2, shredded', qty: '1.0kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 4d / Freezer 8w' },
+                { id: 'i4', text: 'Basil-zucchini turkey-pork meatballs (54 pcs)', qty: '1.4kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 4d / Freezer 3m' },
+                { id: 'i5', text: 'Kangaroo-chicken slider patties (30 pcs)', qty: '1.2kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 4d / Freezer 3m' },
+                { id: 'i6', text: 'Crisp baked panko chicken katsu cutlets (10 pcs)', qty: '1.3kg', storage: 'FREEZER', expiry: '8 weeks' },
+                { id: 'i7', text: 'Sticky miso-maple chicken thigh bites', qty: '1.05kg', storage: 'FREEZER', expiry: '8 weeks' },
+                { id: 'i8', text: 'Coconut-ginger jasmine rice', qty: '3.6kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 4d / Freezer 8w' },
+                { id: 'i9', text: 'Parboiled baby potatoes', qty: '1.9kg', storage: 'FRIDGE', expiry: '4 days' },
+                { id: 'i10', text: 'Spring green tray, roasted', qty: '1.3kg', storage: 'FRIDGE', expiry: '3 days' },
+                { id: 'i11', text: 'Roasted cumin sweet potato wedges', qty: '2.0kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 4d / Freezer 8w' },
+                { id: 'i12', text: 'Slow-roasted cherry tomato & garlic confit', qty: '650g', storage: 'FRIDGE', expiry: '7 days' },
+                { id: 'i13', text: 'Quick-pickled cucumber, radish & spring onion', qty: '1.2kg', storage: 'FRIDGE', expiry: '14 days' },
+                { id: 'i14', text: 'Fried-rice veg base', qty: '1.1kg', storage: 'FREEZER', expiry: '8 weeks' },
+                { id: 'i15', text: 'Soft coconut-yoghurt flatbreads (22 pcs)', qty: '2.1kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 4d / Freezer 8w' },
+                { id: 'i16', text: 'Scratch katsu-curry sauce', qty: '1.8L', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 5d / Freezer 3m' },
+                { id: 'i17', text: 'Basil-garlic tomato sauce', qty: '1.8L', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 5d / Freezer 3m' },
+                { id: 'i18', text: 'Pea-basil-avocado dip', qty: '900g', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 3d / Freezer 6w' },
+                { id: 'i19', text: 'Garlic-tahini coconut-yoghurt sauce', qty: '550g', storage: 'FRIDGE', expiry: '5 days' },
+                { id: 'i20', text: 'Miso-maple-ginger glaze', qty: '300ml', storage: 'FRIDGE', expiry: '3 weeks' },
+                { id: 'i21', text: 'Green salsa verde', qty: '400ml', storage: 'FRIDGE', expiry: '10 days' },
+                { id: 'i22', text: 'Toasted sesame-nori sprinkle', qty: '120g', storage: 'PANTRY', expiry: '4 weeks' }
+            ],
+            snacks: [
+                { id: 'i23', text: 'Zucchini-corn-spring onion egg muffins (36 pcs)', qty: '2.0kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 5d / Freezer 8w', toddler: true, school: true },
+                { id: 'i24', text: 'Pizza scrolls w/ chicken & spinach (24 pcs)', qty: '1.9kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 4d / Freezer 8w', toddler: true, school: true },
+                { id: 'i25', text: 'Soy-ginger jammy eggs (12 pcs)', qty: '700g', storage: 'FRIDGE', expiry: '5 days', toddler: true, school: true },
+                { id: 'i26', text: 'Banana-blueberry baked oat bars (24 pcs)', qty: '2.0kg', storage: 'FRIDGE / FREEZER', expiry: 'Fridge 5d / Freezer 8w', toddler: true, school: true },
+                { id: 'i27', text: 'Strawberry-chia thumbprint oat cookies (30 pcs)', qty: '1.2kg', storage: 'COUNTER / FREEZER', expiry: 'Counter 3d / Freezer 8w', toddler: false, school: false },
+                { id: 'i28', text: 'Date-tahini-oat energy balls (36 pcs)', qty: '1.0kg', storage: 'FRIDGE', expiry: '14 days', toddler: false, school: true },
+                { id: 'i29', text: 'Tamari-rosemary pepita & sunflower crunch', qty: '500g', storage: 'PANTRY', expiry: '3 weeks', toddler: false, school: true },
+                { id: 'i30', text: 'Strawberry-banana coconut-yoghurt bark', qty: '900g', storage: 'FREEZER', expiry: '4 weeks', toddler: true, school: false },
+                { id: 'i31', text: 'Cut fruit boxes', qty: '2.0kg', storage: 'FRIDGE', expiry: '3 days', toddler: true, school: true }
+            ],
+            drinks: [
+                { id: 'i32', text: 'Strawberry-ginger shrub syrup', qty: '1L', storage: 'FRIDGE', expiry: '3 weeks' },
+                { id: 'i33', text: 'Rooibos-mango iced tea', qty: '3L', storage: 'FRIDGE', expiry: '5 days' },
+                { id: 'i34', text: 'Rockmelon-mint cooler', qty: '2L', storage: 'FRIDGE', expiry: '3 days' },
+                { id: 'i35', text: 'Soda water', qty: '6 × 1.25L', storage: 'PANTRY', expiry: 'Per label' }
+            ]
+        };
+
+        // State Management
+        let appState = JSON.parse(localStorage.getItem('mealPrepState')) || {};
+        let activeTab = 'tab-shopping';
+
+        function saveState() {
+            localStorage.setItem('mealPrepState', JSON.stringify(appState));
+            updateCountsAndProgress();
+        }
+
+        function toggleCheck(id) {
+            appState[id] = !appState[id];
+            const label = document.getElementById(`label-${id}`);
+            const checkbox = document.getElementById(id);
+            if (label && checkbox) {
+                if (appState[id]) {
+                    label.classList.add('checked-item');
+                    checkbox.checked = true;
+                } else {
+                    label.classList.remove('checked-item');
+                    checkbox.checked = false;
+                }
+            }
+            saveState();
+        }
+
+        // Render Functions
+        function renderShopping() {
+            const renderCategory = (list, containerId) => {
+                const el = document.getElementById(containerId);
+                el.innerHTML = list.map(item => `
+                    <li class="flex items-start gap-3 py-1">
+                        <input type="checkbox" id="${item.id}" class="custom-checkbox mt-1" 
+                            ${appState[item.id] ? 'checked' : ''} onchange="toggleCheck('${item.id}')">
+                        <label id="label-${item.id}" for="${item.id}" class="text-sm cursor-pointer select-none leading-relaxed ${appState[item.id] ? 'checked-item' : ''}">
+                            <span class="font-medium text-espresso">${item.text}</span>
+                            <span class="text-xs text-espresso/70">(${item.qty})</span>
+                            <span class="inline-block text-[10px] bg-alabaster text-espresso/80 px-1.5 py-0.5 rounded border border-[#DCD7CE] ml-1">Used in: ${item.tag}</span>
+                        </label>
+                    </li>
+                `).join('');
+            };
+
+            renderCategory(shoppingData.produce, 'list-produce');
+            renderCategory(shoppingData.meat, 'list-meat');
+            renderCategory(shoppingData.pantry, 'list-pantry');
+            renderCategory(shoppingData.chilled, 'list-chilled');
+        }
+
+        function renderWorkflow() {
+            const renderStage = (list, containerId) => {
+                const el = document.getElementById(containerId);
+                el.innerHTML = list.map(item => `
+                    <li class="flex items-start gap-3 p-2 hover:bg-alabaster/50 rounded transition">
+                        <input type="checkbox" id="${item.id}" class="custom-checkbox mt-1" 
+                            ${appState[item.id] ? 'checked' : ''} onchange="toggleCheck('${item.id}')">
+                        <label id="label-${item.id}" for="${item.id}" class="text-sm cursor-pointer select-none leading-relaxed ${appState[item.id] ? 'checked-item' : ''}">
+                            ${item.text.replace(/\n/g, '<br>')}
+                        </label>
+                    </li>
+                `).join('');
+            };
+
+            renderStage(workflowData.stageA, 'workflow-stage-a');
+            renderStage(workflowData.stageB, 'workflow-stage-b');
+            renderStage(workflowData.stageC, 'workflow-stage-c');
+            renderStage(workflowData.stageD, 'workflow-stage-d');
+            renderStage(workflowData.stageE, 'workflow-stage-e');
+        }
+
+        function renderInventory() {
+            const getStoragePill = (storage) => {
+                return storage.split('/').map(s => {
+                    const st = s.trim();
+                    let cls = 'pill-counter';
+                    if (st === 'FRIDGE') cls = 'pill-fridge';
+                    if (st === 'FREEZER') cls = 'pill-freezer';
+                    if (st === 'PANTRY') cls = 'pill-pantry';
+                    return `<span class="text-[10px] px-2 py-0.5 font-bold rounded ${cls}">${st}</span>`;
+                }).join(' ');
+            };
+
+            const renderCategory = (list, containerId) => {
+                const el = document.getElementById(containerId);
+                el.innerHTML = list.map(item => `
+                    <div class="flex items-start gap-3 p-3 bg-alabaster/40 rounded border border-[#DCD7CE]/60 hover:border-[#DCD7CE] transition">
+                        <input type="checkbox" id="${item.id}" class="custom-checkbox mt-1" 
+                            ${appState[item.id] ? 'checked' : ''} onchange="toggleCheck('${item.id}')">
+                        <div class="flex-1">
+                            <label id="label-${item.id}" for="${item.id}" class="text-sm cursor-pointer select-none font-medium block ${appState[item.id] ? 'checked-item' : ''}">
+                                ${item.text} <span class="text-xs font-normal text-espresso/70">(${item.qty})</span>
+                            </label>
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                ${getStoragePill(item.storage)}
+                                <span class="text-xs text-espresso/60">${item.expiry}</span>
+                                ${item.toddler ? '<span class="text-[10px] px-1.5 py-0.5 font-semibold rounded pill-toddler">Toddler-Friendly</span>' : ''}
+                                ${item.school ? '<span class="text-[10px] px-1.5 py-0.5 font-semibold rounded pill-school">School Safe</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            };
+
+            renderCategory(inventoryData.core, 'inventory-core');
+            renderCategory(inventoryData.snacks, 'inventory-snacks');
+            renderCategory(inventoryData.drinks, 'inventory-drinks');
+        }
+
+        // Navigation
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-terracotta', 'text-white');
+                btn.classList.add('bg-white', 'text-espresso');
+            });
+
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.remove('bg-white', 'text-espresso');
+            activeBtn.classList.add('bg-terracotta', 'text-white');
+
+            const titles = {
+                'tab-shopping': 'Shopping Completion',
+                'tab-workflow': 'Workflow Stage Progress',
+                'tab-inventory': 'Inventory Preparedness',
+                'tab-daily': 'Daily Guide View'
+            };
+            document.getElementById('active-tab-title').innerText = titles[tabId];
+
+            updateCountsAndProgress();
+        }
+
+        function switchDay(dayKey) {
+            document.querySelectorAll('.day-panel').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`day-panel-${dayKey}`).classList.remove('hidden');
+
+            document.querySelectorAll('.day-btn').forEach(btn => {
+                btn.classList.remove('bg-terracotta', 'text-white');
+                btn.classList.add('bg-white', 'text-espresso');
+            });
+
+            const activeBtn = document.getElementById(`day-btn-${dayKey}`);
+            activeBtn.classList.remove('bg-white', 'text-espresso');
+            activeBtn.classList.add('bg-terracotta', 'text-white');
+        }
+
+        // Progress Calculations
+        function updateCountsAndProgress() {
+            const countTab = (dataObj) => {
+                let total = 0;
+                let checked = 0;
+                Object.values(dataObj).forEach(array => {
+                    array.forEach(item => {
+                        total++;
+                        if (appState[item.id]) checked++;
+                    });
+                });
+                return { total, checked };
+            };
+
+            const shop = countTab(shoppingData);
+            const work = countTab(workflowData);
+            const inv = countTab(inventoryData);
+
+            document.getElementById('count-shopping').innerText = `${shop.checked}/${shop.total}`;
+            document.getElementById('count-workflow').innerText = `${work.checked}/${work.total}`;
+            document.getElementById('count-inventory').innerText = `${inv.checked}/${inv.total}`;
+
+            let currentCounts = { total: 0, checked: 0 };
+            if (activeTab === 'tab-shopping') currentCounts = shop;
+            if (activeTab === 'tab-workflow') currentCounts = work;
+            if (activeTab === 'tab-inventory') currentCounts = inv;
+
+            const percentage = currentCounts.total > 0 ? Math.round((currentCounts.checked / currentCounts.total) * 100) : 100;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            document.getElementById('completion-percentage').innerText = `${percentage}%`;
+        }
+
+        function resetCurrentTab() {
+            let dataObj = null;
+            if (activeTab === 'tab-shopping') dataObj = shoppingData;
+            if (activeTab === 'tab-workflow') dataObj = workflowData;
+            if (activeTab === 'tab-inventory') dataObj = inventoryData;
+
+            if (dataObj) {
+                Object.values(dataObj).forEach(array => {
+                    array.forEach(item => {
+                        appState[item.id] = false;
+                    });
+                });
+                saveState();
+                if (activeTab === 'tab-shopping') renderShopping();
+                if (activeTab === 'tab-workflow') renderWorkflow();
+                if (activeTab === 'tab-inventory') renderInventory();
+            }
+        }
+
+        // Initialization
+        window.onload = function() {
+            renderShopping();
+            renderWorkflow();
+            renderInventory();
+            updateCountsAndProgress();
+        };
+    </script>
+</body>
+</html>
